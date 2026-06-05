@@ -1,0 +1,37 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "YourStrong@Passw0rd"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -Q 'SELECT 1' -C || exit 1"]
+      interval: 10s
+      retries: 10
+      start_period: 30s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ConnectionStrings__DefaultConnection: "Server=db,1433;Database=PollaMundialista;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"
+      Jwt__SecretKey: "polla-mundialista-super-secret-key-min-32-chars!"
+      Jwt__Issuer: "PollaMundialista"
+      Jwt__Audience: "PollaMundialista"
+      Jwt__ExpirationMinutes: "480"
+      Cors__AllowedOrigins__0: "http://localhost:4200"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mssql_data:
