@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -17,10 +18,12 @@ public class JwtService : IJwtService
         _settings = settings.Value;
     }
 
-    public string GenerateToken(User user)
+    public AccessToken GenerateAccessToken(User user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var expiresAt = DateTime.UtcNow.AddMinutes(_settings.ExpirationMinutes);
 
         var claims = new[]
         {
@@ -34,9 +37,24 @@ public class JwtService : IJwtService
             issuer: _settings.Issuer,
             audience: _settings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_settings.ExpirationMinutes),
+            expires: expiresAt,
             signingCredentials: credentials);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return new AccessToken(new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
+    }
+
+    public RefreshTokenMaterial GenerateRefreshToken()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(64);
+        var plain = Base64UrlEncoder.Encode(bytes);
+        var hash = HashRefreshToken(plain);
+        var expiresAt = DateTime.UtcNow.AddDays(_settings.RefreshTokenDays);
+        return new RefreshTokenMaterial(plain, hash, expiresAt);
+    }
+
+    public string HashRefreshToken(string plainToken)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(plainToken));
+        return Convert.ToHexString(hash);
     }
 }

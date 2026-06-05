@@ -4,5 +4,11 @@ namespace PollaMundialista.Application.Common.Interfaces;
 
 public interface IJwtService
 {
-    string GenerateToken(User user);
+    AccessToken GenerateAccessToken(User user);
+    RefreshTokenMaterial GenerateRefreshToken();
+    string HashRefreshToken(string plainToken);
 }
+
+public record AccessToken(string Token, DateTime ExpiresAt);
+
+public record RefreshTokenMaterial(string PlainToken, string TokenHash, DateTime ExpiresAt);

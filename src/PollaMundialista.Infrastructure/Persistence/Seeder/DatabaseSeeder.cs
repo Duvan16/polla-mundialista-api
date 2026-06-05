@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PollaMundialista.Application.Common.Interfaces;
 using PollaMundialista.Domain.Entities;
@@ -10,26 +11,42 @@ public class DatabaseSeeder
 {
     private readonly AppDbContext _context;
     private readonly IPasswordHasher _hasher;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<DatabaseSeeder> _logger;
 
-    public DatabaseSeeder(AppDbContext context, IPasswordHasher hasher, ILogger<DatabaseSeeder> logger)
+    public DatabaseSeeder(
+        AppDbContext context,
+        IPasswordHasher hasher,
+        IConfiguration configuration,
+        ILogger<DatabaseSeeder> logger)
     {
         _context = context;
         _hasher = hasher;
+        _configuration = configuration;
         _logger = logger;
     }
 
+    public async Task MigrateAsync(CancellationToken cancellationToken = default)
+        => await _context.Database.MigrateAsync(cancellationToken);
+
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
-        await _context.Database.MigrateAsync(cancellationToken);
-
         if (await _context.Users.AnyAsync(cancellationToken))
             return;
 
+        var adminPassword = _configuration["Seeding:AdminPassword"];
+        var userPassword = _configuration["Seeding:UserPassword"];
+
+        if (string.IsNullOrWhiteSpace(adminPassword) || string.IsNullOrWhiteSpace(userPassword))
+            throw new InvalidOperationException(
+                "Seeding is enabled but Seeding:AdminPassword and/or Seeding:UserPassword are not set. " +
+                "Provide them via environment variables (Seeding__AdminPassword, Seeding__UserPassword), " +
+                "user-secrets, or appsettings.Development.json.");
+
         _logger.LogInformation("Seeding database...");
 
-        var admin = User.Create("admin@polla.com", _hasher.Hash("Admin123!"), "Admin", UserRole.Admin);
-        var user = User.Create("user@polla.com", _hasher.Hash("User123!"), "Player One");
+        var admin = User.Create("admin@polla.com", _hasher.Hash(adminPassword), "Admin", UserRole.Admin);
+        var user = User.Create("user@polla.com", _hasher.Hash(userPassword), "Player One");
 
         await _context.Users.AddRangeAsync([admin, user], cancellationToken);
 

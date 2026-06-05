@@ -65,9 +65,9 @@ public class GetLeaderboardHandlerTests
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Should().HaveCount(3);
-        result.Value[0].Should().Be(new LeaderboardEntryDto(1, "Alice", 3, 1));
-        result.Value[1].Should().Be(new LeaderboardEntryDto(2, "Bob", 1, 0));
-        result.Value[2].Should().Be(new LeaderboardEntryDto(3, "Charlie", 0, 0));
+        result.Value[0].Should().Be(new LeaderboardEntryDto(alice.Id, 1, "Alice", 3, 1));
+        result.Value[1].Should().Be(new LeaderboardEntryDto(bob.Id, 2, "Bob", 1, 0));
+        result.Value[2].Should().Be(new LeaderboardEntryDto(charlie.Id, 3, "Charlie", 0, 0));
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public class GetLeaderboardHandlerTests
         var result = await CreateHandler().Handle(new GetLeaderboardQuery(), CancellationToken.None);
 
         result.Value!.Should().HaveCount(1);
-        result.Value[0].Should().Be(new LeaderboardEntryDto(1, "Alice", 4, 1));
+        result.Value[0].Should().Be(new LeaderboardEntryDto(alice.Id, 1, "Alice", 4, 1));
     }
 
     [Fact]

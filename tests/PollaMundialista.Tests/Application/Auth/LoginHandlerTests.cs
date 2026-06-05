@@ -1,4 +1,6 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using PollaMundialista.Application.Common.Interfaces;
 using PollaMundialista.Application.Features.Auth.Commands.Login;
@@ -10,56 +12,65 @@ namespace PollaMundialista.Tests.Application.Auth;
 public class LoginHandlerTests
 {
     private readonly Mock<IUserRepository> _users = new();
+    private readonly Mock<IRefreshTokenRepository> _refreshTokens = new();
+    private readonly Mock<IUnitOfWork> _uow = new();
     private readonly Mock<IPasswordHasher> _hasher = new();
     private readonly Mock<IJwtService> _jwt = new();
+    private readonly Mock<ICurrentUser> _currentUser = new();
+    private readonly ILogger<LoginCommandHandler> _logger = NullLogger<LoginCommandHandler>.Instance;
 
-    private LoginCommandHandler CreateHandler() =>
-        new(_users.Object, _hasher.Object, _jwt.Object);
+    private LoginCommandHandler CreateHandler()
+    {
+        _jwt.Setup(j => j.GenerateAccessToken(It.IsAny<User>()))
+            .Returns(new AccessToken("jwt-token", DateTime.UtcNow.AddMinutes(15)));
+        _jwt.Setup(j => j.GenerateRefreshToken())
+            .Returns(new RefreshTokenMaterial("plain-refresh", "hash-refresh", DateTime.UtcNow.AddDays(14)));
+        return new LoginCommandHandler(
+            _users.Object, _refreshTokens.Object, _uow.Object,
+            _hasher.Object, _jwt.Object, _currentUser.Object, _logger);
+    }
 
     [Fact]
-    public async Task Handle_ValidCredentials_ReturnsSuccessWithToken()
+    public async Task Handle_ValidCredentials_ReturnsSuccessWithAccessAndRefreshTokens()
     {
-        // Arrange
         var user = User.Create("alice@test.com", "hashed-pw", "Alice");
         var command = new LoginCommand("alice@test.com", "Password1");
 
         _users.Setup(r => r.GetByEmailAsync(command.Email, It.IsAny<CancellationToken>()))
               .ReturnsAsync(user);
         _hasher.Setup(h => h.Verify(command.Password, user.PasswordHash)).Returns(true);
-        _jwt.Setup(j => j.GenerateToken(user)).Returns("jwt-token");
 
-        // Act
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value!.Email.Should().Be(user.Email);
-        result.Value.Token.Should().Be("jwt-token");
+        result.Value.AccessToken.Should().Be("jwt-token");
+        result.Value.RefreshToken.Should().Be("plain-refresh");
+
+        _refreshTokens.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Once);
+        _uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_UserNotFound_ReturnsFailure()
+    public async Task Handle_UserNotFound_ReturnsFailureAndDoesNotIssueTokens()
     {
-        // Arrange
         var command = new LoginCommand("ghost@test.com", "Password1");
 
         _users.Setup(r => r.GetByEmailAsync(command.Email, It.IsAny<CancellationToken>()))
               .ReturnsAsync((User?)null);
 
-        // Act
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
-        // Assert
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Be("Invalid email or password.");
 
-        _jwt.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+        _jwt.Verify(j => j.GenerateAccessToken(It.IsAny<User>()), Times.Never);
+        _refreshTokens.Verify(r => r.AddAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task Handle_WrongPassword_ReturnsFailure()
+    public async Task Handle_WrongPassword_ReturnsFailureAndDoesNotIssueTokens()
     {
-        // Arrange
         var user = User.Create("alice@test.com", "hashed-pw", "Alice");
         var command = new LoginCommand("alice@test.com", "WrongPass1");
 
@@ -67,14 +78,12 @@ public class LoginHandlerTests
               .ReturnsAsync(user);
         _hasher.Setup(h => h.Verify(command.Password, user.PasswordHash)).Returns(false);
 
-        // Act
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
-        // Assert
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Be("Invalid email or password.");
 
-        _jwt.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+        _jwt.Verify(j => j.GenerateAccessToken(It.IsAny<User>()), Times.Never);
     }
 
     [Fact]
@@ -102,19 +111,15 @@ public class LoginHandlerTests
     [Fact]
     public async Task Handle_AdminUser_ReturnsAdminRole()
     {
-        // Arrange
         var admin = User.Create("admin@test.com", "hashed-pw", "Admin", UserRole.Admin);
         var command = new LoginCommand("admin@test.com", "Password1");
 
         _users.Setup(r => r.GetByEmailAsync(command.Email, It.IsAny<CancellationToken>()))
               .ReturnsAsync(admin);
         _hasher.Setup(h => h.Verify(command.Password, admin.PasswordHash)).Returns(true);
-        _jwt.Setup(j => j.GenerateToken(admin)).Returns("admin-token");
 
-        // Act
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value!.Role.Should().Be(UserRole.Admin.ToString());
     }

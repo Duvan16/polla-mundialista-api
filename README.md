@@ -34,14 +34,29 @@ All business errors use `Result<T>` — no exceptions for expected failures. Val
 
 1. Start a SQL Server instance on `localhost,1433` with SA password `YourStrong@Passw0rd`, or update `appsettings.Development.json` with your own connection string.
 
-2. Restore and run:
+2. Set the JWT signing key. `appsettings.json` ships with an empty `Jwt:SecretKey` so production startups must inject one. For local dev:
+
+```bash
+cd src/PollaMundialista.Api
+dotnet user-secrets set "Jwt:SecretKey" "<paste a 32+ character random string>"
+```
+
+Or use an environment variable:
+
+```bash
+export Jwt__SecretKey="<paste a 32+ character random string>"
+```
+
+`appsettings.Development.json` already includes a dev secret so you can skip this step when running with `ASPNETCORE_ENVIRONMENT=Development`.
+
+3. Restore and run:
 
 ```bash
 dotnet restore
 dotnet run --project src/PollaMundialista.Api
 ```
 
-EF Core migrations are applied automatically on startup. The database is also seeded on first run.
+EF Core migrations are applied automatically on startup. The seeder only runs when `Seeding:Enabled` is `true` (default in `appsettings.Development.json`, off in `appsettings.json`).
 
 The API is available at `https://localhost:5001` (or `http://localhost:5000`).  
 Swagger UI: `https://localhost:5001/swagger`
@@ -102,10 +117,16 @@ The seeder is idempotent — runs only when the Users table is empty.
 
 ### Auth — `/api/auth`
 
-| Method | Path               | Auth     | Description                        |
-|--------|--------------------|----------|------------------------------------|
-| POST   | `/register`        | Public   | Register a new user                |
-| POST   | `/login`           | Public   | Login, returns JWT                 |
+All auth endpoints are rate-limited to **10 requests / minute / IP** (fixed-window).
+
+| Method | Path        | Auth   | Description                                          |
+|--------|-------------|--------|------------------------------------------------------|
+| POST   | `/register` | Public | Register, returns access + refresh tokens            |
+| POST   | `/login`    | Public | Login, returns access + refresh tokens               |
+| POST   | `/refresh`  | Public | Rotate refresh token, returns new access + refresh   |
+| POST   | `/logout`   | Public | Revoke a refresh token (idempotent, returns 204)     |
+
+Access tokens have a short lifetime (default 15 min). Clients must call `/refresh` with the opaque refresh token to obtain a new pair. Each refresh **rotates** the token — replaying a used refresh token returns `401`.
 
 ### Predictions — `/api/predictions`
 
@@ -119,6 +140,7 @@ The seeder is idempotent — runs only when the Users table is empty.
 
 | Method | Path                          | Auth     | Description                          |
 |--------|-------------------------------|----------|--------------------------------------|
+| GET    | `/matches`                    | Admin    | All matches with current results     |
 | PUT    | `/matches/{matchId}/result`   | Admin    | Set match result, recalculates scores |
 
 ### Leaderboard — `/api/leaderboard`
@@ -126,7 +148,7 @@ The seeder is idempotent — runs only when the Users table is empty.
 | Method | Path                          | Auth     | Description                          |
 |--------|-------------------------------|----------|--------------------------------------|
 | GET    | `/`                           | User     | Ranked leaderboard (total points)    |
-| GET    | `/users/{userId}/history`     | User     | Match-by-match history for a user    |
+| GET    | `/users/{userId}/history`     | User     | Match-by-match history (self only — returns `403` for other users) |
 
 ---
 
@@ -149,11 +171,41 @@ See `src/PollaMundialista.Api/appsettings.Example.json` for all required setting
 | Key                                | Description                              |
 |------------------------------------|------------------------------------------|
 | `ConnectionStrings:DefaultConnection` | SQL Server connection string          |
-| `Jwt:SecretKey`                    | HS256 signing key (min 32 chars)         |
+| `Jwt:SecretKey`                    | HS256 signing key (min 32 bytes). **Must be set via user-secrets or env var in non-Dev.** |
 | `Jwt:Issuer`                       | JWT issuer claim                         |
 | `Jwt:Audience`                     | JWT audience claim                       |
-| `Jwt:ExpirationMinutes`            | Token lifetime (default: 480)            |
+| `Jwt:ExpirationMinutes`            | Access-token lifetime (default: 15)      |
+| `Jwt:RefreshTokenDays`             | Refresh-token lifetime (default: 14)     |
 | `Cors:AllowedOrigins`              | Array of allowed frontend origins        |
+| `Seeding:Enabled`                  | Run the demo-data seeder on startup (default: `false`) |
+| `Seeding:AdminPassword`            | Required when `Seeding:Enabled=true`     |
+| `Seeding:UserPassword`             | Required when `Seeding:Enabled=true`     |
+
+### Environment-variable overrides
+
+Production deployments should provide secrets via environment variables rather than `appsettings.json`. The standard .NET binding maps `:` → `__`:
+
+```bash
+export ConnectionStrings__DefaultConnection="Server=...;Database=...;User Id=...;Password=...;"
+export Jwt__SecretKey="<32+ char value>"
+export Seeding__AdminPassword="<strong password>"
+export Seeding__UserPassword="<strong password>"
+```
+
+The app **fails fast** at startup if `Jwt:SecretKey` is missing or shorter than 32 bytes.
+
+### Security hardening summary
+
+- **OWASP A02/A05** — Secrets removed from `appsettings.json`; HSTS in non-Dev; security headers middleware (`nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Cache-Control: no-store` on `/api/auth`); CORS narrowed to known methods + headers.
+- **OWASP A07** — Short-lived access JWTs (15 min) + rotating refresh tokens stored as SHA-256 hashes (plaintext is never persisted); replay rejected by `RevokedAt` chain. Fixed-window rate limit on `/api/auth/*`.
+- **OWASP A01** — `GET /api/leaderboard/users/{userId}/history` is now self-only.
+- **OWASP A09** — Login success/failure logged with email + remote IP via `ICurrentUser`.
+
+### Follow-ups (out of scope for this pass)
+
+- Move refresh-token storage to an HttpOnly cookie (requires Angular interceptor changes).
+- Centralize secrets in Azure Key Vault / AWS Secrets Manager.
+- 2FA / MFA.
 
 ---
 

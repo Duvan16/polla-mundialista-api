@@ -5,5 +5,8 @@ public record AuthResponse(
     string Email,
     string DisplayName,
     string Role,
-    string Token
+    string AccessToken,
+    DateTime AccessTokenExpiresAt,
+    string RefreshToken,
+    DateTime RefreshTokenExpiresAt
 );

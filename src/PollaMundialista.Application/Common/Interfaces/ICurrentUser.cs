@@ -6,4 +6,5 @@ public interface ICurrentUser
     string Email { get; }
     string Role { get; }
     bool IsAuthenticated { get; }
+    string? IpAddress { get; }
 }

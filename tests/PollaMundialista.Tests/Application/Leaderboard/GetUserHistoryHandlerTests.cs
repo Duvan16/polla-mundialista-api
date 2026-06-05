@@ -11,9 +11,13 @@ public class GetUserHistoryHandlerTests
 {
     private readonly Mock<IPredictionRepository> _predictions = new();
     private readonly Mock<IUserRepository> _users = new();
+    private readonly Mock<ICurrentUser> _currentUser = new();
 
-    private GetUserHistoryQueryHandler CreateHandler() =>
-        new(_predictions.Object, _users.Object);
+    private GetUserHistoryQueryHandler CreateHandler(Guid? callerId = null)
+    {
+        _currentUser.Setup(c => c.UserId).Returns(callerId ?? Guid.Empty);
+        return new(_predictions.Object, _users.Object, _currentUser.Object);
+    }
 
     private static User MakeUser()
         => User.Create("player@test.com", "hash", "Player One");
@@ -41,14 +45,30 @@ public class GetUserHistoryHandlerTests
     [Fact]
     public async Task Handle_UserNotFound_ReturnsFailure()
     {
+        var callerId = Guid.NewGuid();
         _users.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
               .ReturnsAsync((User?)null);
 
-        var result = await CreateHandler().Handle(
-            new GetUserHistoryQuery(Guid.NewGuid()), CancellationToken.None);
+        var result = await CreateHandler(callerId).Handle(
+            new GetUserHistoryQuery(callerId), CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Be("User not found.");
+    }
+
+    [Fact]
+    public async Task Handle_RequestingAnotherUsersHistory_ReturnsForbidden()
+    {
+        var callerId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+
+        var result = await CreateHandler(callerId).Handle(
+            new GetUserHistoryQuery(otherUserId), CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Be("Forbidden");
+        _users.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        _predictions.Verify(r => r.GetByUserIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -63,7 +83,7 @@ public class GetUserHistoryHandlerTests
         _predictions.Setup(r => r.GetByUserIdAsync(user.Id, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new List<Prediction> { prediction });
 
-        var result = await CreateHandler().Handle(
+        var result = await CreateHandler(user.Id).Handle(
             new GetUserHistoryQuery(user.Id), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
@@ -82,7 +102,7 @@ public class GetUserHistoryHandlerTests
         _predictions.Setup(r => r.GetByUserIdAsync(user.Id, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new List<Prediction> { prediction });
 
-        var result = await CreateHandler().Handle(
+        var result = await CreateHandler(user.Id).Handle(
             new GetUserHistoryQuery(user.Id), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
@@ -115,7 +135,7 @@ public class GetUserHistoryHandlerTests
                         MakePrediction(user.Id, upcoming, 2, 1),
                     });
 
-        var result = await CreateHandler().Handle(
+        var result = await CreateHandler(user.Id).Handle(
             new GetUserHistoryQuery(user.Id), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
@@ -142,7 +162,7 @@ public class GetUserHistoryHandlerTests
                         MakePrediction(user.Id, newer, 2, 2, 3),
                     });
 
-        var result = await CreateHandler().Handle(
+        var result = await CreateHandler(user.Id).Handle(
             new GetUserHistoryQuery(user.Id), CancellationToken.None);
 
         result.Value![0].HomeTeam.Should().Be("C"); // newer match first

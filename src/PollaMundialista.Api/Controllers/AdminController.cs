@@ -1,9 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PollaMundialista.Application.Common.Interfaces;
 using PollaMundialista.Application.Features.Admin.Commands.SetMatchResult;
-using PollaMundialista.Application.Features.Predictions.DTOs;
+using PollaMundialista.Application.Features.Admin.Queries.GetAllMatchesAdmin;
 
 namespace PollaMundialista.Api.Controllers;
 
@@ -13,26 +12,15 @@ namespace PollaMundialista.Api.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IMatchRepository _matches;
 
-    public AdminController(IMediator mediator, IMatchRepository matches)
-    {
-        _mediator = mediator;
-        _matches = matches;
-    }
+    public AdminController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet("matches")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMatches(CancellationToken cancellationToken)
     {
-        var matches = await _matches.GetAllAsync(cancellationToken);
-        var dtos = matches
-            .OrderBy(m => m.MatchDate)
-            .Select(m => new MatchWithPredictionDto(
-                m.Id, m.GroupName, m.HomeTeam, m.AwayTeam, m.MatchDate,
-                null, null, m.IsFinished, m.HomeGoals, m.AwayGoals))
-            .ToList();
-        return Ok(dtos);
+        var result = await _mediator.Send(new GetAllMatchesAdminQuery(), cancellationToken);
+        return Ok(result.Value);
     }
 
     [HttpPut("matches/{matchId:guid}/result")]

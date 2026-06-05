@@ -1,12 +1,16 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PollaMundialista.Application.Features.Auth.Commands.Login;
+using PollaMundialista.Application.Features.Auth.Commands.Logout;
+using PollaMundialista.Application.Features.Auth.Commands.RefreshToken;
 using PollaMundialista.Application.Features.Auth.Commands.RegisterUser;
 
 namespace PollaMundialista.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("auth")]
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -40,4 +44,31 @@ public class AuthController : ControllerBase
             ? Ok(result.Value)
             : Unauthorized(new { error = result.Error });
     }
+
+    [HttpPost("refresh")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Refresh(
+        [FromBody] RefreshTokenRequest body,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new RefreshTokenCommand(body.RefreshToken), cancellationToken);
+
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : Unauthorized(new { error = result.Error });
+    }
+
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout(
+        [FromBody] LogoutRequest body,
+        CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new LogoutCommand(body.RefreshToken), cancellationToken);
+        return NoContent();
+    }
 }
+
+public record RefreshTokenRequest(string RefreshToken);
+public record LogoutRequest(string RefreshToken);

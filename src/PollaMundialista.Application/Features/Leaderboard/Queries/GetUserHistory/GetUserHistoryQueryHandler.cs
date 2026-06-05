@@ -10,17 +10,25 @@ public class GetUserHistoryQueryHandler
 {
     private readonly IPredictionRepository _predictions;
     private readonly IUserRepository _users;
+    private readonly ICurrentUser _currentUser;
 
-    public GetUserHistoryQueryHandler(IPredictionRepository predictions, IUserRepository users)
+    public GetUserHistoryQueryHandler(
+        IPredictionRepository predictions,
+        IUserRepository users,
+        ICurrentUser currentUser)
     {
         _predictions = predictions;
         _users = users;
+        _currentUser = currentUser;
     }
 
     public async Task<Result<IReadOnlyList<UserHistoryItemDto>>> Handle(
         GetUserHistoryQuery request,
         CancellationToken cancellationToken)
     {
+        if (request.UserId != _currentUser.UserId)
+            return Result<IReadOnlyList<UserHistoryItemDto>>.Failure("Forbidden");
+
         var user = await _users.GetByIdAsync(request.UserId, cancellationToken);
         if (user is null)
             return Result<IReadOnlyList<UserHistoryItemDto>>.Failure("User not found.");

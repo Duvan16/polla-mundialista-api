@@ -11,6 +11,7 @@ public class User
     public UserRole Role { get; private set; }
 
     public ICollection<Prediction> Predictions { get; private set; } = new List<Prediction>();
+    public ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
 
     private User() { }
 

@@ -25,13 +25,17 @@ public class LeaderboardController : ControllerBase
 
     [HttpGet("users/{userId:guid}/history")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUserHistory(Guid userId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetUserHistoryQuery(userId), cancellationToken);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
+        if (result.IsSuccess)
+            return Ok(result.Value);
+
+        return result.Error == "Forbidden"
+            ? StatusCode(StatusCodes.Status403Forbidden, new { error = result.Error })
             : NotFound(new { error = result.Error });
     }
 }
