@@ -28,6 +28,12 @@ public class PredictionRepository : IPredictionRepository
             .Where(p => p.UserId == userId)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<Prediction>> GetAllWithUsersAsync(CancellationToken cancellationToken = default)
+        => await _context.Predictions
+            .Include(p => p.User)
+            .Where(p => p.PointsAwarded.HasValue)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(Prediction prediction, CancellationToken cancellationToken = default)
         => await _context.Predictions.AddAsync(prediction, cancellationToken);
 }
