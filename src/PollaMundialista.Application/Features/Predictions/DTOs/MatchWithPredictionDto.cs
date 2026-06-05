@@ -7,5 +7,9 @@ public record MatchWithPredictionDto(
     string AwayTeam,
     DateTime MatchDate,
     int? MyPredictedHomeGoals,
-    int? MyPredictedAwayGoals
+    int? MyPredictedAwayGoals,
+    bool IsFinished = false,
+    int? ActualHomeGoals = null,
+    int? ActualAwayGoals = null,
+    int? PointsAwarded = null
 );

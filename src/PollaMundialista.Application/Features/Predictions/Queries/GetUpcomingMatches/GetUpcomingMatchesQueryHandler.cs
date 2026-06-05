@@ -27,29 +27,33 @@ public class GetUpcomingMatchesQueryHandler
         CancellationToken cancellationToken)
     {
         var allMatches = await _matches.GetAllAsync(cancellationToken);
-        var upcoming = allMatches.Where(m => !m.IsFinished).ToList();
 
-        Dictionary<Guid, (int home, int away)> myPredictions = [];
+        Dictionary<Guid, (int home, int away, int? points)> myPredictions = [];
 
         if (_currentUser.IsAuthenticated)
         {
             var userPredictions = await _predictions.GetByUserIdAsync(_currentUser.UserId, cancellationToken);
             myPredictions = userPredictions.ToDictionary(
                 p => p.MatchId,
-                p => (p.PredictedHomeGoals, p.PredictedAwayGoals));
+                p => (p.PredictedHomeGoals, p.PredictedAwayGoals, p.PointsAwarded));
         }
 
-        var dtos = upcoming.Select(m =>
+        var dtos = allMatches.OrderBy(m => m.MatchDate).Select(m =>
         {
             myPredictions.TryGetValue(m.Id, out var pred);
+            var hasPrediction = myPredictions.ContainsKey(m.Id);
             return new MatchWithPredictionDto(
                 m.Id,
                 m.GroupName,
                 m.HomeTeam,
                 m.AwayTeam,
                 m.MatchDate,
-                myPredictions.ContainsKey(m.Id) ? pred.home : null,
-                myPredictions.ContainsKey(m.Id) ? pred.away : null);
+                hasPrediction ? pred.home : null,
+                hasPrediction ? pred.away : null,
+                m.IsFinished,
+                m.HomeGoals,
+                m.AwayGoals,
+                hasPrediction ? pred.points : null);
         }).ToList();
 
         return Result<IReadOnlyList<MatchWithPredictionDto>>.Success(dtos);

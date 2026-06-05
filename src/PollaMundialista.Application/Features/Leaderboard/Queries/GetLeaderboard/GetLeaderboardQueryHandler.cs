@@ -25,6 +25,7 @@ public class GetLeaderboardQueryHandler
             .GroupBy(p => new { p.UserId, p.User.DisplayName })
             .Select(g => new
             {
+                g.Key.UserId,
                 g.Key.DisplayName,
                 TotalPoints = g.Sum(p => p.PointsAwarded ?? 0),
                 ExactHits = g.Count(p => p.PointsAwarded == 3)
@@ -35,7 +36,7 @@ public class GetLeaderboardQueryHandler
             .ToList();
 
         var leaderboard = ranked
-            .Select((x, i) => new LeaderboardEntryDto(i + 1, x.DisplayName, x.TotalPoints, x.ExactHits))
+            .Select((x, i) => new LeaderboardEntryDto(x.UserId, i + 1, x.DisplayName, x.TotalPoints, x.ExactHits))
             .ToList();
 
         return Result<IReadOnlyList<LeaderboardEntryDto>>.Success(leaderboard);
