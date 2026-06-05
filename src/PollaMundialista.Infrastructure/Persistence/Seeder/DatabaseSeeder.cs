@@ -35,9 +35,21 @@ public class DatabaseSeeder
 
         var matches = new[]
         {
-            Match.Create("Group A", "Argentina", "Brazil", new DateTime(2026, 6, 15, 18, 0, 0, DateTimeKind.Utc)),
-            Match.Create("Group A", "France", "Germany", new DateTime(2026, 6, 15, 21, 0, 0, DateTimeKind.Utc)),
-            Match.Create("Group B", "Spain", "Portugal", new DateTime(2026, 6, 16, 18, 0, 0, DateTimeKind.Utc)),
+            // Group A
+            Match.Create("Group A", "Argentina",  "Brazil",      new DateTime(2026, 6, 15, 18, 0, 0, DateTimeKind.Utc)),
+            Match.Create("Group A", "France",      "Germany",     new DateTime(2026, 6, 15, 21, 0, 0, DateTimeKind.Utc)),
+            Match.Create("Group A", "Argentina",  "France",      new DateTime(2026, 6, 19, 18, 0, 0, DateTimeKind.Utc)),
+            Match.Create("Group A", "Germany",    "Brazil",      new DateTime(2026, 6, 19, 21, 0, 0, DateTimeKind.Utc)),
+            // Group B
+            Match.Create("Group B", "Spain",       "Portugal",    new DateTime(2026, 6, 16, 18, 0, 0, DateTimeKind.Utc)),
+            Match.Create("Group B", "England",     "Netherlands", new DateTime(2026, 6, 16, 21, 0, 0, DateTimeKind.Utc)),
+            Match.Create("Group B", "Spain",       "England",     new DateTime(2026, 6, 20, 18, 0, 0, DateTimeKind.Utc)),
+            Match.Create("Group B", "Portugal",    "Netherlands", new DateTime(2026, 6, 20, 21, 0, 0, DateTimeKind.Utc)),
+            // Group C
+            Match.Create("Group C", "Colombia",    "Mexico",      new DateTime(2026, 6, 17, 18, 0, 0, DateTimeKind.Utc)),
+            Match.Create("Group C", "Uruguay",     "USA",         new DateTime(2026, 6, 17, 21, 0, 0, DateTimeKind.Utc)),
+            Match.Create("Group C", "Colombia",    "Uruguay",     new DateTime(2026, 6, 21, 18, 0, 0, DateTimeKind.Utc)),
+            Match.Create("Group C", "Mexico",      "USA",         new DateTime(2026, 6, 21, 21, 0, 0, DateTimeKind.Utc)),
         };
 
         await _context.Matches.AddRangeAsync(matches, cancellationToken);

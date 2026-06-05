@@ -23,7 +23,10 @@ public class PredictionRepository : IPredictionRepository
         => await _context.Predictions.Where(p => p.MatchId == matchId).ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Prediction>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-        => await _context.Predictions.Where(p => p.UserId == userId).ToListAsync(cancellationToken);
+        => await _context.Predictions
+            .Include(p => p.Match)
+            .Where(p => p.UserId == userId)
+            .ToListAsync(cancellationToken);
 
     public async Task AddAsync(Prediction prediction, CancellationToken cancellationToken = default)
         => await _context.Predictions.AddAsync(prediction, cancellationToken);
