@@ -12,7 +12,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+// Read from "CorsSettings" to avoid conflict with the Azure App Service platform env var Cors__AllowedOrigins__0
+var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>()
+    ?? builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? [];
 builder.Services.AddCors(options =>
     options.AddPolicy("Angular", policy =>
         policy.WithOrigins(allowedOrigins)

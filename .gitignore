@@ -6,6 +6,10 @@
 # dotenv files
 .env
 
+# Azure publish profiles (contain deployment credentials)
+*.PublishSettings
+*.publishsettings
+
 # User-specific files
 *.rsuser
 *.suo

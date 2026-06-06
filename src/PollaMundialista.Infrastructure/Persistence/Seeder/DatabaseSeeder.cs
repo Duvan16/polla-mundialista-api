@@ -31,7 +31,7 @@ public class DatabaseSeeder
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
-        if (await _context.Users.AnyAsync(cancellationToken))
+        if (await _context.Users.AnyAsync(u => u.Email == "admin@polla.com", cancellationToken))
             return;
 
         var adminPassword = _configuration["Seeding:AdminPassword"];
