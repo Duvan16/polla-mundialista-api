@@ -4,6 +4,10 @@ using PollaMundialista.Application.Common.Interfaces;
 
 namespace PollaMundialista.Application.Features.Auth.Commands.Logout;
 
+/// <summary>
+/// Handles <see cref="LogoutCommand"/>: revokes the refresh token if it exists and is still active.
+/// Always returns success to avoid leaking whether a token existed.
+/// </summary>
 public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
 {
     private readonly IRefreshTokenRepository _refreshTokens;

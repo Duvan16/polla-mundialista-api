@@ -3,6 +3,10 @@ using MediatR;
 
 namespace PollaMundialista.Application.Common.Behaviors;
 
+/// <summary>
+/// MediatR pipeline behavior that runs all registered FluentValidation validators for a request
+/// and throws <see cref="FluentValidation.ValidationException"/> if any rule fails.
+/// </summary>
 public sealed class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {

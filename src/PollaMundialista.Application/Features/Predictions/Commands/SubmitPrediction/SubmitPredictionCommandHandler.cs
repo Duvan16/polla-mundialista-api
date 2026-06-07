@@ -6,6 +6,10 @@ using PollaMundialista.Domain.Entities;
 
 namespace PollaMundialista.Application.Features.Predictions.Commands.SubmitPrediction;
 
+/// <summary>
+/// Handles <see cref="SubmitPredictionCommand"/>: creates the prediction or updates the existing one.
+/// Rejects submissions for finished matches because scoring has already been calculated.
+/// </summary>
 public class SubmitPredictionCommandHandler
     : IRequestHandler<SubmitPredictionCommand, Result<SubmitPredictionResponse>>
 {

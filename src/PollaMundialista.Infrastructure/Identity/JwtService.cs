@@ -9,6 +9,9 @@ using PollaMundialista.Domain.Entities;
 
 namespace PollaMundialista.Infrastructure.Identity;
 
+/// <summary>
+/// Generates HMAC-SHA256 signed JWT access tokens and cryptographically random refresh tokens.
+/// </summary>
 public class JwtService : IJwtService
 {
     private readonly JwtSettings _settings;

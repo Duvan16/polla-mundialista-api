@@ -1,5 +1,9 @@
 namespace PollaMundialista.Api.Middleware;
 
+/// <summary>
+/// Adds defensive HTTP security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
+/// to every response. Auth endpoints additionally receive <c>Cache-Control: no-store</c>.
+/// </summary>
 public class SecurityHeadersMiddleware
 {
     private readonly RequestDelegate _next;

@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace PollaMundialista.Application.Common.Behaviors;
 
+/// <summary>
+/// MediatR pipeline behavior that logs the name of every request before and after handling.
+/// </summary>
 public sealed class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {

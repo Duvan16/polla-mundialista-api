@@ -6,6 +6,10 @@ using TokenEntity = PollaMundialista.Domain.Entities.RefreshToken;
 
 namespace PollaMundialista.Application.Features.Auth.Commands.RefreshToken;
 
+/// <summary>
+/// Handles <see cref="RefreshTokenCommand"/>: validates and rotates the refresh token,
+/// revoking the old one and issuing a fresh pair to prevent token reuse.
+/// </summary>
 public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, Result<AuthResponse>>
 {
     private readonly IRefreshTokenRepository _refreshTokens;

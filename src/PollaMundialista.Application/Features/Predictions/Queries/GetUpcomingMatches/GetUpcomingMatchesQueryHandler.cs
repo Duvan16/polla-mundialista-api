@@ -5,6 +5,10 @@ using PollaMundialista.Application.Features.Predictions.DTOs;
 
 namespace PollaMundialista.Application.Features.Predictions.Queries.GetUpcomingMatches;
 
+/// <summary>
+/// Handles <see cref="GetUpcomingMatchesQuery"/>: merges match data with the user's predictions
+/// via an in-memory dictionary to avoid an N+1 query.
+/// </summary>
 public class GetUpcomingMatchesQueryHandler
     : IRequestHandler<GetUpcomingMatchesQuery, Result<IReadOnlyList<MatchWithPredictionDto>>>
 {

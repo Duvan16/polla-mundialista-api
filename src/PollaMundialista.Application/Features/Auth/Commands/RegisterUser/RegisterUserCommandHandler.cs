@@ -7,6 +7,7 @@ using TokenEntity = PollaMundialista.Domain.Entities.RefreshToken;
 
 namespace PollaMundialista.Application.Features.Auth.Commands.RegisterUser;
 
+/// <summary>Handles <see cref="RegisterUserCommand"/>: creates the user (rejecting duplicate emails) and issues tokens.</summary>
 public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, Result<AuthResponse>>
 {
     private readonly IUserRepository _users;

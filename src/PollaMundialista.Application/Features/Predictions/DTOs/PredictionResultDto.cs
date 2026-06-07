@@ -1,5 +1,6 @@
 namespace PollaMundialista.Application.Features.Predictions.DTOs;
 
+/// <summary>A user's prediction for a specific match, paired with the actual result and points earned.</summary>
 public record PredictionResultDto(
     Guid PredictionId,
     Guid MatchId,

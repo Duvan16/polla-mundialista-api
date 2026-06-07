@@ -4,6 +4,10 @@ using PollaMundialista.Application.Common.Interfaces;
 
 namespace PollaMundialista.Api.Middleware;
 
+/// <summary>
+/// Resolves the current user's identity from the JWT claims in the active <see cref="HttpContext"/>.
+/// Registered as a scoped service so handlers receive per-request identity automatically.
+/// </summary>
 public class CurrentUserService : ICurrentUser
 {
     private readonly IHttpContextAccessor _httpContextAccessor;

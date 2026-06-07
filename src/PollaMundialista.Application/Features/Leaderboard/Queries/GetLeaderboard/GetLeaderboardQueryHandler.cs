@@ -5,6 +5,10 @@ using PollaMundialista.Application.Features.Leaderboard.DTOs;
 
 namespace PollaMundialista.Application.Features.Leaderboard.Queries.GetLeaderboard;
 
+/// <summary>
+/// Handles <see cref="GetLeaderboardQuery"/>: aggregates points and exact-hit counts in memory,
+/// then ranks users by total points descending, exact hits descending, display name ascending.
+/// </summary>
 public class GetLeaderboardQueryHandler
     : IRequestHandler<GetLeaderboardQuery, Result<IReadOnlyList<LeaderboardEntryDto>>>
 {

@@ -5,6 +5,10 @@ using PollaMundialista.Domain.Services;
 
 namespace PollaMundialista.Application.Features.Admin.Commands.SetMatchResult;
 
+/// <summary>
+/// Handles <see cref="SetMatchResultCommand"/>: sets the match result and recalculates
+/// <c>PointsAwarded</c> for every prediction on that match. Operation is idempotent.
+/// </summary>
 public class SetMatchResultCommandHandler : IRequestHandler<SetMatchResultCommand, Result>
 {
     private readonly IMatchRepository _matches;

@@ -6,6 +6,11 @@ using System.Text.Json;
 
 namespace PollaMundialista.Api.Middleware;
 
+/// <summary>
+/// Global exception handler that maps unhandled exceptions to RFC 7807 problem-detail responses.
+/// Catches <see cref="FluentValidation.ValidationException"/> (400), <see cref="Domain.Exceptions.DomainException"/> (400),
+/// <see cref="UnauthorizedAccessException"/> (401), and falls back to 500 for anything else.
+/// </summary>
 public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;

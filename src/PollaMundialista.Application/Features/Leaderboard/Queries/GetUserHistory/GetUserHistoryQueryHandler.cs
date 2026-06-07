@@ -5,6 +5,10 @@ using PollaMundialista.Application.Features.Leaderboard.DTOs;
 
 namespace PollaMundialista.Application.Features.Leaderboard.Queries.GetUserHistory;
 
+/// <summary>
+/// Handles <see cref="GetUserHistoryQuery"/>: enforces that users can only view their own history
+/// by comparing the requested UserId against the authenticated user's identity.
+/// </summary>
 public class GetUserHistoryQueryHandler
     : IRequestHandler<GetUserHistoryQuery, Result<IReadOnlyList<UserHistoryItemDto>>>
 {

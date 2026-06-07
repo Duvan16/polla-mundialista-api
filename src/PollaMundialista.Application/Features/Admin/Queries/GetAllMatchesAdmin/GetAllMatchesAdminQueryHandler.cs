@@ -5,6 +5,7 @@ using PollaMundialista.Application.Features.Predictions.DTOs;
 
 namespace PollaMundialista.Application.Features.Admin.Queries.GetAllMatchesAdmin;
 
+/// <summary>Handles <see cref="GetAllMatchesAdminQuery"/>: returns every match ordered by date.</summary>
 public class GetAllMatchesAdminQueryHandler
     : IRequestHandler<GetAllMatchesAdminQuery, Result<IReadOnlyList<MatchWithPredictionDto>>>
 {

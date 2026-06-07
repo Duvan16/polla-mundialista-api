@@ -5,6 +5,7 @@ using PollaMundialista.Application.Features.Predictions.DTOs;
 
 namespace PollaMundialista.Application.Features.Predictions.Queries.GetMyPredictions;
 
+/// <summary>Handles <see cref="GetMyPredictionsQuery"/>: fetches and projects the current user's predictions.</summary>
 public class GetMyPredictionsQueryHandler
     : IRequestHandler<GetMyPredictionsQuery, Result<IReadOnlyList<PredictionResultDto>>>
 {

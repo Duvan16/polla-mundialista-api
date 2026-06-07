@@ -8,6 +8,7 @@ using TokenEntity = PollaMundialista.Domain.Entities.RefreshToken;
 
 namespace PollaMundialista.Application.Features.Auth.Commands.Login;
 
+/// <summary>Handles <see cref="LoginCommand"/>: validates credentials and issues JWT + refresh token pair.</summary>
 public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResponse>>
 {
     private readonly IUserRepository _users;

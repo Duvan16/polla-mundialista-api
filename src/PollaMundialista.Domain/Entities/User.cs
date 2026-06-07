@@ -2,6 +2,9 @@ using PollaMundialista.Domain.Enums;
 
 namespace PollaMundialista.Domain.Entities;
 
+/// <summary>
+/// A registered participant in the prediction pool, with an assigned role of User or Admin.
+/// </summary>
 public class User
 {
     public Guid Id { get; private set; }
@@ -15,6 +18,7 @@ public class User
 
     private User() { }
 
+    /// <summary>Creates a new user with a pre-hashed password. Defaults to the <see cref="UserRole.User"/> role.</summary>
     public static User Create(string email, string passwordHash, string displayName, UserRole role = UserRole.User)
     {
         return new User

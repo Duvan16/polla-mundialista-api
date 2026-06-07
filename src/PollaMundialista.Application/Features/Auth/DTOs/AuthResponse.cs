@@ -1,5 +1,6 @@
 namespace PollaMundialista.Application.Features.Auth.DTOs;
 
+/// <summary>Response payload returned on successful login, registration, or token refresh.</summary>
 public record AuthResponse(
     Guid UserId,
     string Email,

@@ -4,6 +4,7 @@ using PollaMundialista.Infrastructure.Persistence.Configurations;
 
 namespace PollaMundialista.Infrastructure.Persistence;
 
+/// <summary>EF Core database context. All entity configurations are applied via <c>IEntityTypeConfiguration</c> classes.</summary>
 public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
