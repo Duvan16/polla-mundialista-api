@@ -42,7 +42,7 @@ public class GetUpcomingMatchesQueryHandler
                 p => (p.PredictedHomeGoals, p.PredictedAwayGoals, p.PointsAwarded));
         }
 
-        var dtos = allMatches.OrderBy(m => m.MatchDate).Select(m =>
+        var dtos = allMatches.Where(m => !m.IsFinished).OrderBy(m => m.MatchDate).Select(m =>
         {
             myPredictions.TryGetValue(m.Id, out var pred);
             var hasPrediction = myPredictions.ContainsKey(m.Id);
