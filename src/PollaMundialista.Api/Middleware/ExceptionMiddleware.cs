@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Mvc;
 using PollaMundialista.Domain.Exceptions;
 using System.Net;
@@ -15,11 +16,13 @@ public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionMiddleware> _logger;
+    private readonly TelemetryClient _telemetryClient;
 
-    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, TelemetryClient telemetryClient)
     {
         _next = next;
         _logger = logger;
+        _telemetryClient = telemetryClient;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -30,6 +33,7 @@ public class ExceptionMiddleware
         }
         catch (Exception ex)
         {
+            _telemetryClient.TrackException(ex);
             _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
             await HandleExceptionAsync(context, ex);
         }

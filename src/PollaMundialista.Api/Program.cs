@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplicationInsightsTelemetry();
 
 // Read from "CorsSettings" to avoid conflict with the Azure App Service platform env var Cors__AllowedOrigins__0
 var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>()
